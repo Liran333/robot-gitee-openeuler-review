@@ -5,12 +5,39 @@ import (
 	"strings"
 
 	sdk "github.com/opensourceways/go-gitee/gitee"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	retestCommand     = "/retest"
+	removeClaCommand  = "/cla cancel"
+	removeLabel       = "openeuler-cla/yes"
 	msgNotSetReviewer = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
 )
+
+func (bot *robot) removeInvalidCLA(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
+	if !e.IsPullRequest() ||
+		!e.IsPROpen() ||
+		!e.IsCreatingCommentEvent() ||
+		e.GetComment().GetBody() != removeClaCommand {
+		return nil
+	}
+
+	org, repo := e.GetOrgRepo()
+	number := e.GetPRNumber()
+	commenter := e.GetCommenter()
+
+	hasPermission, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+	if err != nil {
+		return err
+	}
+
+	if !hasPermission {
+		return nil
+	}
+
+	return bot.cli.RemovePRLabel(org, repo, number, removeLabel)
+}
 
 func (bot *robot) doRetest(e *sdk.PullRequestEvent) error {
 	if sdk.GetPullRequestAction(e) != sdk.PRActionChangedSourceBranch {
