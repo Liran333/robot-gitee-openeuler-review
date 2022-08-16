@@ -67,6 +67,9 @@ func (c *configuration) SetDefault() {
 type botConfig struct {
 	config.RepoFilter
 
+	// LegalOperator means who can add or remove labels legally
+	LegalOperator string `json:"legal_operator,omitempty"`
+
 	// LgtmCountsRequired specifies the number of lgtm label which will be need for the pr.
 	// When it is greater than 1, the lgtm label is composed of 'lgtm-login'.
 	// The default value is 1 which means the lgtm label is itself.

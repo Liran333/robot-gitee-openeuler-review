@@ -19,7 +19,6 @@ const (
 	msgInvalidLabels      = "PR should remove these labels: %s"
 	msgNotEnoughLGTMLabel = "PR needs %d lgtm labels and now gets %d"
 	msgFrozenWithOwner    = "The target branch of PR has been frozen and it can be merge only by branch owners: %s"
-	legalLabelsAddedBy    = "openeuler-ci-bot"
 )
 
 var regCheckPr = regexp.MustCompile(`(?mi)^/check-pr\s*$`)
@@ -362,7 +361,7 @@ func isLabelMatched(labels sets.String, cfg *botConfig, ops []sdk.OperateLog, lo
 		}
 	}
 
-	s := checkLabelsLegal(labels, needs, ops, log)
+	s := checkLabelsLegal(labels, needs, ops, cfg.LegalOperator, log)
 	if s != "" {
 		reasons = append(reasons, s)
 	}
@@ -429,7 +428,8 @@ func getLatestLog(ops []sdk.OperateLog, label string, log *logrus.Entry) (labelL
 	return labelLog{}, false
 }
 
-func checkLabelsLegal(labels sets.String, needs sets.String, ops []sdk.OperateLog, log *logrus.Entry) string {
+func checkLabelsLegal(labels sets.String, needs sets.String, ops []sdk.OperateLog, legalOperator string,
+	log *logrus.Entry) string {
 	f := func(label string) string {
 		v, b := getLatestLog(ops, label, log)
 		if !b {
@@ -437,7 +437,7 @@ func checkLabelsLegal(labels sets.String, needs sets.String, ops []sdk.OperateLo
 				"the label and add it again by correct way")
 		}
 
-		if v.who != legalLabelsAddedBy {
+		if v.who != legalOperator {
 			if strings.HasPrefix(v.label, "openeuler-cla/") {
 				return fmt.Sprintf("%s You can't add %s by yourself, "+
 					"please remove it and use /check-cla to add it", v.who, v.label)
