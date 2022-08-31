@@ -18,7 +18,7 @@ const (
 	msgMissingLabels      = "PR does not have these lables: %s"
 	msgInvalidLabels      = "PR should remove these labels: %s"
 	msgNotEnoughLGTMLabel = "PR needs %d lgtm labels and now gets %d"
-	msgFrozenWithOwner    = "The target branch of PR has been frozen and it can be merge only by branch owners: %s"
+	msgFrozenWithOwner    = "The target branch of PR has been frozen and it can be merge only by branch owners: @%s"
 )
 
 var regCheckPr = regexp.MustCompile(`(?mi)^/check-pr\s*$`)
@@ -177,7 +177,7 @@ func (m *mergeHelper) canMerge(log *logrus.Entry) ([]string, bool) {
 	}
 
 	return []string{
-		fmt.Sprintf(msgFrozenWithOwner, strings.Join(freeze.Owner, ", ")),
+		fmt.Sprintf(msgFrozenWithOwner, strings.Join(freeze.Owner, " , @")),
 	}, false
 }
 
