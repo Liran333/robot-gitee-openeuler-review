@@ -36,11 +36,13 @@ func (bot *robot) handleCheckPR(e *sdk.NoteEvent, cfg *botConfig, log *logrus.En
 
 func (bot *robot) tryMerge(e *sdk.NoteEvent, cfg *botConfig, addComment bool, log *logrus.Entry) error {
 	org, repo := e.GetOrgRepo()
+	methodOfMerge := bot.genMergeMethod(e.GetPullRequest(), org, repo, log)
 
 	h := mergeHelper{
 		cfg:     cfg,
 		org:     org,
 		repo:    repo,
+		method:  methodOfMerge,
 		cli:     bot.cli,
 		pr:      e.GetPullRequest(),
 		trigger: e.GetCommenter(),
@@ -69,12 +71,15 @@ func (bot *robot) handleLabelUpdate(e *sdk.PullRequestEvent, cfg *botConfig, log
 	}
 
 	org, repo := e.GetOrgRepo()
+	methodOfMerge := bot.genMergeMethod(e.GetPullRequest(), org, repo, log)
+
 	h := mergeHelper{
-		cfg:  cfg,
-		org:  org,
-		repo: repo,
-		cli:  bot.cli,
-		pr:   e.GetPullRequest(),
+		cfg:    cfg,
+		org:    org,
+		repo:   repo,
+		method: methodOfMerge,
+		cli:    bot.cli,
+		pr:     e.GetPullRequest(),
 	}
 
 	if _, ok := h.canMerge(log); ok {
@@ -90,6 +95,7 @@ type mergeHelper struct {
 
 	org     string
 	repo    string
+	method  string
 	trigger string
 
 	cli iClient
@@ -127,7 +133,7 @@ func (m *mergeHelper) merge() error {
 	return m.cli.MergePR(
 		m.org, m.repo, number,
 		sdk.PullRequestMergePutParam{
-			MergeMethod: string(m.cfg.MergeMethod),
+			MergeMethod: m.method,
 			Description: fmt.Sprintf("\n%s", desc),
 		},
 	)
