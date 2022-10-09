@@ -70,10 +70,10 @@ func (bot *robot) handleRebase(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Ent
 	prLabels := e.GetPRLabelSet()
 	if _, ok := prLabels["flattened/merge"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
-			"Please use **/flattened cancel** to remove **flattened/merge** label, and try **/rebase** again")
+			"Please use **/flattened cancel** to remove **merge/flattened** label, and try **/rebase** again")
 	}
 
-	return bot.cli.AddPRLabel(org, repo, number, "rebase/merge")
+	return bot.cli.AddPRLabel(org, repo, number, "merge/rebase")
 }
 
 func (bot *robot) handleFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
@@ -100,10 +100,10 @@ func (bot *robot) handleFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	prLabels := e.GetPRLabelSet()
 	if _, ok := prLabels["rebase/merge"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
-			"Please use **/rebase cancel** to remove **rebase/merge** label, and try **/flattened** again")
+			"Please use **/rebase cancel** to remove **merge/rebase** label, and try **/flattened** again")
 	}
 
-	return bot.cli.AddPRLabel(org, repo, number, "flattened/merge")
+	return bot.cli.AddPRLabel(org, repo, number, "merge/flattened")
 }
 
 func (bot *robot) doRetest(e *sdk.PullRequestEvent) error {
@@ -169,12 +169,12 @@ func (bot *robot) genMergeMethod(e *sdk.PullRequestHook, org, repo string, log *
 	sigLabel := ""
 
 	for p := range prLabels {
-		if strings.HasSuffix(p, "/merge") {
-			if strings.Split(p, "/")[0] == "flattened" {
+		if strings.HasPrefix(p, "merge/") {
+			if strings.Split(p, "/")[1] == "flattened" {
 				return "squash"
 			}
 
-			return strings.Split(p, "/")[0]
+			return strings.Split(p, "/")[1]
 		}
 
 		if strings.HasPrefix(p, "sig/") {
