@@ -112,5 +112,21 @@ func (bot *robot) handleNoteEvent(e *sdk.NoteEvent, pc config.Config, log *logru
 		merr.AddError(err)
 	}
 
+	if err = bot.handleRebase(e, cfg, log); err != nil {
+		merr.AddError(err)
+	}
+
+	if err = bot.handleFlattened(e, cfg, log); err != nil {
+		merr.AddError(err)
+	}
+
+	if err = bot.removeRebase(e, cfg, log); err != nil {
+		merr.AddError(err)
+	}
+
+	if err = bot.removeFlattened(e, cfg, log); err != nil {
+		merr.AddError(err)
+	}
+
 	return merr.Err()
 }
