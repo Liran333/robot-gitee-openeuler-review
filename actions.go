@@ -68,7 +68,7 @@ func (bot *robot) handleRebase(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Ent
 	}
 
 	prLabels := e.GetPRLabelSet()
-	if _, ok := prLabels["flattened/merge"]; ok {
+	if _, ok := prLabels["merge/flattened"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
 			"Please use **/flattened cancel** to remove **merge/flattened** label, and try **/rebase** again")
 	}
@@ -98,7 +98,7 @@ func (bot *robot) handleFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	}
 
 	prLabels := e.GetPRLabelSet()
-	if _, ok := prLabels["rebase/merge"]; ok {
+	if _, ok := prLabels["merge/rebase"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
 			"Please use **/rebase cancel** to remove **merge/rebase** label, and try **/flattened** again")
 	}
@@ -223,7 +223,7 @@ func (bot *robot) removeRebase(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Ent
 		return nil
 	}
 
-	return bot.cli.RemovePRLabel(org, repo, number, "rebase/merge")
+	return bot.cli.RemovePRLabel(org, repo, number, "merge/rebase")
 }
 
 func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
@@ -248,7 +248,7 @@ func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 		return nil
 	}
 
-	return bot.cli.RemovePRLabel(org, repo, number, "flattened/merge")
+	return bot.cli.RemovePRLabel(org, repo, number, "merge/flattened")
 }
 
 func (bot *robot) decodeRepoYaml(content sdk.Content, log *logrus.Entry) string {
