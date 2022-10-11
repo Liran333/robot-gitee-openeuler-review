@@ -15,9 +15,9 @@ const (
 	removeClaCommand  = "/cla cancel"
 	rebaseCommand     = "/rebase"
 	removeRebase      = "/rebase cancel"
-	removeFlattened   = "/flattened cancel"
+	removeSquash      = "/squash cancel"
 	baseMergeMethod   = "merge"
-	flattenedCommand  = "/flattened"
+	squashCommand     = "/squash"
 	removeLabel       = "openeuler-cla/yes"
 	msgNotSetReviewer = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
 )
@@ -68,9 +68,9 @@ func (bot *robot) handleRebase(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Ent
 	}
 
 	prLabels := e.GetPRLabelSet()
-	if _, ok := prLabels["merge/flattened"]; ok {
+	if _, ok := prLabels["merge/squash"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
-			"Please use **/flattened cancel** to remove **merge/flattened** label, and try **/rebase** again")
+			"Please use **/squash cancel** to remove **merge/squash** label, and try **/rebase** again")
 	}
 
 	return bot.cli.AddPRLabel(org, repo, number, "merge/rebase")
@@ -80,7 +80,7 @@ func (bot *robot) handleFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	if !e.IsPullRequest() ||
 		!e.IsPROpen() ||
 		!e.IsCreatingCommentEvent() ||
-		e.GetComment().GetBody() != flattenedCommand {
+		e.GetComment().GetBody() != squashCommand {
 		return nil
 	}
 
@@ -100,10 +100,10 @@ func (bot *robot) handleFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	prLabels := e.GetPRLabelSet()
 	if _, ok := prLabels["merge/rebase"]; ok {
 		return bot.cli.CreatePRComment(org, repo, number,
-			"Please use **/rebase cancel** to remove **merge/rebase** label, and try **/flattened** again")
+			"Please use **/rebase cancel** to remove **merge/rebase** label, and try **/squash** again")
 	}
 
-	return bot.cli.AddPRLabel(org, repo, number, "merge/flattened")
+	return bot.cli.AddPRLabel(org, repo, number, "merge/squash")
 }
 
 func (bot *robot) doRetest(e *sdk.PullRequestEvent) error {
@@ -170,7 +170,7 @@ func (bot *robot) genMergeMethod(e *sdk.PullRequestHook, org, repo string, log *
 
 	for p := range prLabels {
 		if strings.HasPrefix(p, "merge/") {
-			if strings.Split(p, "/")[1] == "flattened" {
+			if strings.Split(p, "/")[1] == "squash" {
 				return "squash"
 			}
 
@@ -230,7 +230,7 @@ func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	if !e.IsPullRequest() ||
 		!e.IsPROpen() ||
 		!e.IsCreatingCommentEvent() ||
-		e.GetComment().GetBody() != removeFlattened {
+		e.GetComment().GetBody() != removeSquash {
 		return nil
 	}
 
@@ -248,7 +248,7 @@ func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 		return nil
 	}
 
-	return bot.cli.RemovePRLabel(org, repo, number, "merge/flattened")
+	return bot.cli.RemovePRLabel(org, repo, number, "merge/squash")
 }
 
 func (bot *robot) decodeRepoYaml(content sdk.Content, log *logrus.Entry) string {
@@ -267,7 +267,9 @@ func (bot *robot) decodeRepoYaml(content sdk.Content, log *logrus.Entry) string 
 	}
 
 	if r.MergeMethod != "" {
-		return r.MergeMethod
+		if r.MergeMethod == "rebase" || r.MergeMethod == "squash" {
+			return r.MergeMethod
+		}
 	}
 
 	return baseMergeMethod
