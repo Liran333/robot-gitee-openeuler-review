@@ -187,11 +187,11 @@ func (bot *robot) genMergeMethod(e *sdk.PullRequestHook, org, repo string, log *
 	}
 
 	sig := strings.Split(sigLabel, "/")[1]
-	filePath := fmt.Sprintf("sig/%s/%s/%s/%s", sig, org, repo[0:1], fmt.Sprintf("%s.yaml", repo))
+	filePath := fmt.Sprintf("sig/%s/%s/%s/%s", sig, org, strings.ToLower(repo[0:1]), fmt.Sprintf("%s.yaml", repo))
 
 	c, err := bot.cli.GetPathContent("openeuler", "community", filePath, "master")
 	if err != nil {
-		log.Infof("get repo %s failed, because of %v", fmt.Sprintf(org, repo), err)
+		log.Infof("get repo %s failed, because of %v", fmt.Sprintf("%s-%s", org, repo), err)
 
 		return mergeMethod
 	}
