@@ -259,6 +259,7 @@ func (m *mergeHelper) genMergeDesc() string {
 
 	reviewers := sets.NewString()
 	signers := sets.NewString()
+	ackers := sets.NewString()
 
 	org, repo := m.org, m.repo
 	for _, c := range comments {
@@ -270,7 +271,12 @@ func (m *mergeHelper) genMergeDesc() string {
 			if f2(c, regAddApprove) {
 				signers.Insert(c.User.Login)
 			}
+
+			if f2(c, regAck) {
+				ackers.Insert(c.User.Login)
+			}
 		}
+
 		if f(c, regAddLgtm) {
 			reviewers.Insert(c.User.Login)
 		}
@@ -280,7 +286,7 @@ func (m *mergeHelper) genMergeDesc() string {
 		}
 	}
 
-	if len(signers) == 0 && len(reviewers) == 0 {
+	if len(signers) == 0 && len(reviewers) == 0 && len(ackers) == 0 {
 		return ""
 	}
 
@@ -327,6 +333,13 @@ func (m *mergeHelper) genMergeDesc() string {
 			}
 		}
 
+		ackersInfo := sets.NewString()
+		for a, _ := range ackers {
+			if v, ok := nameEmail[a]; ok {
+				ackersInfo.Insert(v)
+			}
+		}
+
 		reviewedUserInfo := make([]string, 0)
 		for _, item := range reviewersInfo.UnsortedList() {
 			reviewedUserInfo = append(reviewedUserInfo, fmt.Sprintf("Reviewed-by: %s \n", item))
@@ -337,10 +350,16 @@ func (m *mergeHelper) genMergeDesc() string {
 			signedOffUserInfo = append(signedOffUserInfo, fmt.Sprintf("Signed-off-by: %s \n", item))
 		}
 
+		ackeByUserInfo := make([]string, 0)
+		for _, item := range ackersInfo.UnsortedList() {
+			ackeByUserInfo = append(ackeByUserInfo, fmt.Sprintf("Acked-by: %s \n", item))
+		}
+
 		return fmt.Sprintf(
-			"\n%s%s",
+			"\n%s%s%s",
 			strings.Join(reviewedUserInfo, ""),
 			strings.Join(signedOffUserInfo, ""),
+			strings.Join(ackeByUserInfo, ""),
 		)
 	}
 

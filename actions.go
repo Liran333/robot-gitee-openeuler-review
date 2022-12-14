@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"regexp"
 	"strings"
 
 	sdk "github.com/opensourceways/go-gitee/gitee"
@@ -19,7 +20,13 @@ const (
 	baseMergeMethod   = "merge"
 	squashCommand     = "/squash"
 	removeLabel       = "openeuler-cla/yes"
+	ackCommand        = "/ack"
+	ackLabel          = "Acked"
 	msgNotSetReviewer = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
+)
+
+var (
+	regAck = regexp.MustCompile(`(?mi)^/ack\s*$`)
 )
 
 func (bot *robot) removeInvalidCLA(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
@@ -187,11 +194,11 @@ func (bot *robot) genMergeMethod(e *sdk.PullRequestHook, org, repo string, log *
 	}
 
 	sig := strings.Split(sigLabel, "/")[1]
-	filePath := fmt.Sprintf("sig/%s/%s/%s/%s", sig, org, repo[0:1], fmt.Sprintf("%s.yaml", repo))
+	filePath := fmt.Sprintf("sig/%s/%s/%s/%s", sig, org, strings.ToLower(repo[0:1]), fmt.Sprintf("%s.yaml", repo))
 
 	c, err := bot.cli.GetPathContent("openeuler", "community", filePath, "master")
 	if err != nil {
-		log.Infof("get repo %s failed, because of %v", fmt.Sprintf(org, repo), err)
+		log.Infof("get repo %s failed, because of %v", fmt.Sprintf("%s-%s", org, repo), err)
 
 		return mergeMethod
 	}
@@ -249,6 +256,35 @@ func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 	}
 
 	return bot.cli.RemovePRLabel(org, repo, number, "merge/squash")
+}
+
+func (bot *robot) handleACK(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
+	if !e.IsPullRequest() ||
+		!e.IsPROpen() ||
+		!e.IsCreatingCommentEvent() ||
+		e.GetComment().GetBody() != ackCommand {
+		return nil
+	}
+
+	org, repo := e.GetOrgRepo()
+	if org != "openeuler" && repo != "kernel" {
+		return nil
+	}
+
+	number := e.GetPRNumber()
+
+	commenter := e.GetCommenter()
+
+	hasPermission, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+	if err != nil {
+		return err
+	}
+
+	if !hasPermission {
+		return nil
+	}
+
+	return bot.cli.AddPRLabel(org, repo, number, ackLabel)
 }
 
 func (bot *robot) decodeRepoYaml(content sdk.Content, log *logrus.Entry) string {
