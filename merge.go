@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -118,14 +119,32 @@ func (m *mergeHelper) merge() error {
 
 	desc := m.genMergeDesc()
 
+	bodyStr := ""
 	if m.org == "openeuler" && m.repo == "kernel" {
+		author := m.pr.GetUser().GetLogin()
+		if author == "openeuler-sync-bot" {
+			bodySlice := strings.Split(m.pr.Body, "\n")
+			originPR := strings.Split(strings.Replace(bodySlice[1], "### ", "", -1), "1. ")[1]
+			syncRelatedPR := bodySlice[2]
+
+			relatedPRNumber, _ := strconv.Atoi(strings.Replace(
+				strings.Split(syncRelatedPR, "/")[6], "\r", "", -1))
+			relatedOrg := strings.Split(syncRelatedPR, "/")[3]
+			relatedRepo := strings.Split(syncRelatedPR, "/")[4]
+			relatedPR, _ := m.cli.GetGiteePullRequest(relatedOrg, relatedRepo, int32(relatedPRNumber))
+			relatedDesc := relatedPR.Body
+
+			bodyStr = fmt.Sprintf("\n%s \n%s \n \n%s", originPR, syncRelatedPR, relatedDesc)
+		} else {
+			bodyStr = m.pr.Body
+		}
 		return m.cli.MergePR(
 			m.org, m.repo, number,
 			sdk.PullRequestMergePutParam{
 				MergeMethod: string(m.cfg.MergeMethod),
-				Description: fmt.Sprintf("\n%s \n \n%s \n \n%s %s",
+				Description: fmt.Sprintf("\n%s \n \n%s \n \n%s \n%s",
 					fmt.Sprintf("Merge Pull Request from: @%s", m.pr.User.GetLogin()),
-					m.pr.Body, fmt.Sprintf("Link:%s", m.pr.GetHtmlURL()), desc),
+					bodyStr, fmt.Sprintf("Link:%s", m.pr.GetHtmlURL()), desc),
 			},
 		)
 	}
