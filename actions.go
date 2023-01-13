@@ -20,13 +20,13 @@ const (
 	baseMergeMethod   = "merge"
 	squashCommand     = "/squash"
 	removeLabel       = "openeuler-cla/yes"
-	ackCommand        = "/ack"
 	ackLabel          = "Acked"
 	msgNotSetReviewer = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
 )
 
 var (
-	regAck = regexp.MustCompile(`(?mi)^/ack\s*$`)
+	regAck     = regexp.MustCompile(`(?mi)^/ack\s*$`)
+	ackCommand = regexp.MustCompile(`(?mi)^/ack\s*$`)
 )
 
 func (bot *robot) removeInvalidCLA(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
@@ -261,8 +261,11 @@ func (bot *robot) removeFlattened(e *sdk.NoteEvent, cfg *botConfig, log *logrus.
 func (bot *robot) handleACK(e *sdk.NoteEvent, cfg *botConfig, log *logrus.Entry) error {
 	if !e.IsPullRequest() ||
 		!e.IsPROpen() ||
-		!e.IsCreatingCommentEvent() ||
-		e.GetComment().GetBody() != ackCommand {
+		!e.IsCreatingCommentEvent() {
+		return nil
+	}
+
+	if !ackCommand.MatchString(e.GetComment().GetBody()) {
 		return nil
 	}
 
