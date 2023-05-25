@@ -12,16 +12,17 @@ import (
 )
 
 const (
-	retestCommand     = "/retest"
-	removeClaCommand  = "/cla cancel"
-	rebaseCommand     = "/rebase"
-	removeRebase      = "/rebase cancel"
-	removeSquash      = "/squash cancel"
-	baseMergeMethod   = "merge"
-	squashCommand     = "/squash"
-	removeLabel       = "openeuler-cla/yes"
-	ackLabel          = "Acked"
-	msgNotSetReviewer = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
+	retestCommand              = "/retest"
+	removeClaCommand           = "/cla cancel"
+	rebaseCommand              = "/rebase"
+	removeRebase               = "/rebase cancel"
+	removeSquash               = "/squash cancel"
+	baseMergeMethod            = "merge"
+	squashCommand              = "/squash"
+	removeLabel                = "openeuler-cla/yes"
+	ackLabel                   = "Acked"
+	msgNotSetReviewer          = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
+	msgNoPermissionToRemoveCla = "**@%s** has no permission to %s ***%s*** label in this pull request. :astonished:\nPlease contact to the collaborators in this repository."
 )
 
 var (
@@ -47,7 +48,8 @@ func (bot *robot) removeInvalidCLA(e *sdk.NoteEvent, cfg *botConfig, log *logrus
 	}
 
 	if !hasPermission {
-		return nil
+		return bot.cli.CreatePRComment(org, repo, number, fmt.Sprintf(msgNoPermissionToRemoveCla, commenter,
+			"remove", removeLabel))
 	}
 
 	return bot.cli.RemovePRLabel(org, repo, number, removeLabel)
