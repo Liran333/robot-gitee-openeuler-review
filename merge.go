@@ -63,7 +63,17 @@ func (bot *robot) tryMerge(e *sdk.NoteEvent, cfg *botConfig, addComment bool, lo
 		return nil
 	}
 
-	return h.merge()
+	if err := h.merge(); err != nil {
+		excludeErr := "Pull Request 已合并或已关闭"
+		if strings.Contains(err.Error(), excludeErr) {
+			return err
+		}
+
+		return bot.cli.CreatePRComment(org, repo,
+			e.GetPRNumber(), fmt.Sprintf(prCanNotMergeNotice, e.GetPRAuthor(), methodOfMerge, err.Error()))
+	}
+
+	return nil
 }
 
 func (bot *robot) handleLabelUpdate(e *sdk.PullRequestEvent, cfg *botConfig, log *logrus.Entry) error {
@@ -84,7 +94,17 @@ func (bot *robot) handleLabelUpdate(e *sdk.PullRequestEvent, cfg *botConfig, log
 	}
 
 	if _, ok := h.canMerge(log); ok {
-		return h.merge()
+		if err := h.merge(); err != nil {
+			excludeErr := "Pull Request 已合并或已关闭"
+			if strings.Contains(err.Error(), excludeErr) {
+				return err
+			}
+
+			return bot.cli.CreatePRComment(org, repo,
+				e.GetPRNumber(), fmt.Sprintf(prCanNotMergeNotice, e.GetPRAuthor(), methodOfMerge, err.Error()))
+		} else {
+			return nil
+		}
 	}
 
 	return nil

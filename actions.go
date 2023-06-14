@@ -23,6 +23,7 @@ const (
 	ackLabel                   = "Acked"
 	msgNotSetReviewer          = "**@%s** Thank you for submitting a PullRequest. It is detected that you have not set a reviewer, please set a one."
 	msgNoPermissionToRemoveCla = "**@%s** has no permission to %s ***%s*** label in this pull request. :astonished:\nPlease contact to the collaborators in this repository."
+	prCanNotMergeNotice        = "**@%s** This pull request can not be merged by %s. :astonished:\nPlease check the error message: %s"
 )
 
 var (
