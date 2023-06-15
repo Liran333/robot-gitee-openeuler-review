@@ -64,8 +64,8 @@ func (bot *robot) tryMerge(e *sdk.NoteEvent, cfg *botConfig, addComment bool, lo
 	}
 
 	if err := h.merge(); err != nil {
-		excludeErr := "Pull Request 已合并或已关闭"
-		if strings.Contains(err.Error(), excludeErr) {
+		includeErr := "there are conflicting files"
+		if !strings.Contains(err.Error(), includeErr) {
 			return err
 		}
 
@@ -95,8 +95,8 @@ func (bot *robot) handleLabelUpdate(e *sdk.PullRequestEvent, cfg *botConfig, log
 
 	if _, ok := h.canMerge(log); ok {
 		if err := h.merge(); err != nil {
-			excludeErr := "Pull Request 已合并或已关闭"
-			if strings.Contains(err.Error(), excludeErr) {
+			includeErr := "there are conflicting files"
+			if !strings.Contains(err.Error(), includeErr) {
 				return err
 			}
 
