@@ -25,7 +25,7 @@ type RepoAdmin struct {
 	Repo         []string      `json:"repo,omitempty"`
 	Admins       []Admin       `json:"admins,omitempty"`
 	Committers   []Committer   `json:"committers,omitempty"`
-	Contributors []Contributor `json:"contributor,omitempty"`
+	Contributors []Contributor `json:"contributors,omitempty"`
 }
 
 // Contributor struct.
