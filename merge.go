@@ -347,7 +347,8 @@ func (m *mergeHelper) genMergeDesc() string {
 			return ""
 		}
 
-		nameEmail := make(map[string]string, len(s.Maintainers))
+		nameEmail := make(map[string]string, 80)
+		contributorNameEmail := make(map[string]string, 20)
 		for _, ms := range s.Maintainers {
 			nameEmail[ms.GiteeID] = fmt.Sprintf("%s <%s>", ms.Name, ms.Email)
 		}
@@ -356,11 +357,19 @@ func (m *mergeHelper) genMergeDesc() string {
 			for _, j := range i.Committers {
 				nameEmail[j.GiteeID] = fmt.Sprintf("%s <%s>", j.Name, j.Email)
 			}
+
+			for _, k := range i.Contributors {
+				contributorNameEmail[k.GiteeID] = fmt.Sprintf("%s <%s>", k.Name, k.Email)
+			}
 		}
 
 		reviewersInfo := sets.NewString()
 		for r, _ := range reviewers {
 			if v, ok := nameEmail[r]; ok {
+				reviewersInfo.Insert(v)
+			}
+
+			if v, ok := contributorNameEmail[r]; ok {
 				reviewersInfo.Insert(v)
 			}
 		}
