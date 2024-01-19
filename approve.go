@@ -36,15 +36,30 @@ func (bot *robot) AddApprove(cfg *botConfig, e *sdk.NoteEvent, log *logrus.Entry
 	org, repo := e.GetOrgRepo()
 	commenter := e.GetCommenter()
 
-	v, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+	isBranchKeeper, IsSetBranch, err := bot.CheckBranchKeeper(org, repo, commenter, e.GetPullRequest(), cfg, log)
 	if err != nil {
 		return err
 	}
 
-	if !v {
+	if IsSetBranch && !isBranchKeeper {
 		return bot.cli.CreatePRComment(org, repo, e.GetPRNumber(), fmt.Sprintf(
 			commentNoPermissionForLabel, commenter, "add", approvedLabel,
 		))
+	}
+
+	if !IsSetBranch {
+		v, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+
+		if err != nil {
+			return err
+		}
+
+		if !v {
+			return bot.cli.CreatePRComment(org, repo, e.GetPRNumber(), fmt.Sprintf(
+				commentNoPermissionForLabel, commenter, "add", approvedLabel,
+			))
+		}
+
 	}
 
 	if err := bot.cli.AddPRLabel(org, repo, e.GetPRNumber(), approvedLabel); err != nil {
@@ -66,15 +81,30 @@ func (bot *robot) removeApprove(cfg *botConfig, e *sdk.NoteEvent, log *logrus.En
 	org, repo := e.GetOrgRepo()
 	commenter := e.GetCommenter()
 
-	v, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+	isBranchKeeper, IsSetBranch, err := bot.CheckBranchKeeper(org, repo, commenter, e.GetPullRequest(), cfg, log)
 	if err != nil {
 		return err
 	}
 
-	if !v {
+	if IsSetBranch && !isBranchKeeper {
 		return bot.cli.CreatePRComment(org, repo, e.GetPRNumber(), fmt.Sprintf(
 			commentNoPermissionForLabel, commenter, "remove", approvedLabel,
 		))
+	}
+
+	if !IsSetBranch {
+		v, err := bot.hasPermission(org, repo, commenter, false, e.GetPullRequest(), cfg, log)
+
+		if err != nil {
+			return err
+		}
+
+		if !v {
+			return bot.cli.CreatePRComment(org, repo, e.GetPRNumber(), fmt.Sprintf(
+				commentNoPermissionForLabel, commenter, "remove", approvedLabel,
+			))
+		}
+
 	}
 
 	err = bot.cli.RemovePRLabel(org, repo, e.GetPRNumber(), approvedLabel)
