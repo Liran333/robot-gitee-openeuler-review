@@ -10,6 +10,7 @@ type SigInfos struct {
 	Mentors      []Mentor     `json:"mentors,omitempty"`
 	Maintainers  []Maintainer `json:"maintainers,omitempty"`
 	Repositories []RepoAdmin  `json:"repositories,omitempty"`
+	Branches     []Branches   `json:"branches,omitempty"`
 }
 
 // Maintainer struct.
@@ -74,4 +75,23 @@ type Branch struct {
 	Name       string `json:"name,omitempty"`
 	CreateFrom string `json:"create_from,omitempty"`
 	Type       string `json:"type,omitempty"`
+}
+
+// Branches struct.
+type Branches struct {
+	RepoBranch []RepoBranch `json:"repo_branch,omitempty"`
+	Keeper     []Keeper     `json:"keeper,omitempty"`
+}
+
+// RepoBranch struct
+type RepoBranch struct {
+	Repo   string `json:"repo"`
+	Branch string `json:"branch"`
+}
+
+// Keeper struct.
+type Keeper struct {
+	GiteeID string `json:"gitee_id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Email   string `json:"email,omitempty"`
 }

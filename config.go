@@ -104,6 +104,9 @@ type botConfig struct {
 
 	// FreezeFile is the freeze branch of community
 	FreezeFile []freezeFile `json:"freeze_file,omitempty"`
+
+	// BranchKeeper is used to maintain the approve label or cancel approve maintainer list
+	BranchKeeper branchKeeper `json:"branch_keeper,omitempty"`
 }
 
 func (c *botConfig) setDefault() {
@@ -141,6 +144,11 @@ func (c *botConfig) validate() error {
 		return v.validate()
 	}
 
+	// todo must test branchKeeper is nil
+	if err := c.BranchKeeper.validate(); err != nil {
+		return err
+	}
+
 	return c.RepoFilter.Validate()
 }
 
@@ -170,6 +178,28 @@ func (f freezeFile) validate() error {
 
 	if f.Path == "" {
 		return fmt.Errorf("missing path of freeze file")
+	}
+
+	return nil
+}
+
+type branchKeeper struct {
+	Owner  string `json:"owner" required:"true"`
+	Repo   string `json:"repo" required:"true"`
+	Branch string `json:"branch" required:"true"`
+}
+
+func (b branchKeeper) validate() error {
+	if b.Owner == "" {
+		return fmt.Errorf("missing owner of branch keeper")
+	}
+
+	if b.Repo == "" {
+		return fmt.Errorf("missing repo of branch keeper")
+	}
+
+	if b.Branch == "" {
+		return fmt.Errorf("missing branch of branch keeper")
 	}
 
 	return nil
