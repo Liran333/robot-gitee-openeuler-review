@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -24,6 +25,10 @@ func (bot *robot) CheckBranchKeeper(
 	cfg *botConfig,
 	log *logrus.Entry,
 ) (bool, bool, error) {
+	if reflect.DeepEqual(cfg.BranchKeeper, branchKeeper{}) {
+		return false, false, nil
+	}
+
 	sigInfoFiles, err := bot.getFiles(
 		cfg.BranchKeeper.Owner,
 		cfg.BranchKeeper.Repo,
