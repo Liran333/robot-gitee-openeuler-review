@@ -51,13 +51,28 @@ func (bot *robot) tryMerge(e *sdk.NoteEvent, cfg *botConfig, addComment bool, lo
 
 	if r, ok := h.canMerge(log); !ok {
 		if len(r) > 0 && addComment {
-			return bot.cli.CreatePRComment(
-				org, repo, e.GetPRNumber(),
-				fmt.Sprintf(
-					"@%s , this pr is not mergeable and the reasons are below:\n%s",
-					e.GetCommenter(), strings.Join(r, "\n"),
-				),
-			)
+			claYesLabel := ""
+			for _, labelForMerge := range cfg.LabelsForMerge {
+				if strings.Contains(labelForMerge, "-cla/yes") {
+					claYesLabel = labelForMerge
+					break
+				}
+			}
+			comment := fmt.Sprintf("@%s, this pr is not mergeable and the reasons are below:\n%s\n\n***lgtm***: "+
+			"A label mandatory for merging a pull request. The repository collaborators can comment '/lgtm' to "+
+			"add the label. The creator of a pull request can comment '/lgtm cancel' to remove the label, but "+
+			"cannot run the '/lgtm' command to add the label.\n***approved***: A label mandatory for merging a "+
+			"pull request. The repository collaborators can comment '/approve' to add the label and comment "+
+			"'/approve cancel' to remove the label.\n***%s***:  A label mandatory for merging a pull request. "+
+			"The author of each commit of a pull request must sign the Contributor License Agreement (CLA). "+
+			"Otherwise, the pull request will fail to be merged. After signing the CLA, the author can comment "+
+			"'/check-cla' to check the CLA status again.\n***wait_confirm***: A label for confirming pull request "+
+			"merging. A pull request with this label cannot be automatically merged. This label is added because "+
+			"members (including maintainers, committers, and repository administrators) are to be added to "+
+			"**sig-info.yaml** in the pull request. To remove the label, all members to be added must comment "+
+			"'/lgtm' in the pull request.",
+			e.GetCommenter(), strings.Join(r, "\n"), claYesLabel)
+			return bot.cli.CreatePRComment(org, repo, e.GetPRNumber(), comment)
 		}
 
 		return nil
@@ -440,16 +455,26 @@ func isLabelMatched(labels sets.String, cfg *botConfig, ops []sdk.OperateLog, lo
 	}
 
 	if v := needs.Difference(labels); v.Len() > 0 {
+		vl := v.UnsortedList()
+		var vlp []string
+		for _, i := range vl {
+			vlp = append(vlp, fmt.Sprintf("***%s***", i))
+		}
 		reasons = append(reasons, fmt.Sprintf(
-			msgMissingLabels, strings.Join(v.UnsortedList(), ", "),
+			msgMissingLabels, strings.Join(vlp, ", "),
 		))
 	}
 
 	if len(cfg.MissingLabelsForMerge) > 0 {
 		missing := sets.NewString(cfg.MissingLabelsForMerge...)
 		if v := missing.Intersection(labels); v.Len() > 0 {
+			vl := v.UnsortedList()
+			var vlp []string
+			for _, i := range vl {
+				vlp = append(vlp, fmt.Sprintf("***%s***", i))
+			}
 			reasons = append(reasons, fmt.Sprintf(
-				msgInvalidLabels, strings.Join(v.UnsortedList(), ", "),
+				msgInvalidLabels, strings.Join(vlp, ", "),
 			))
 		}
 	}
